@@ -3,20 +3,20 @@ subprojects {
     manifest {
       attributes 'Plugin-Class': "${pluginClass}",
           'Plugin-Id': "${pluginId}",
-          'Plugin-Version': "${archiveVersion}",
+          'Plugin-Version': "${version}",
           'Plugin-Provider': "${pluginProvider}"
     }
   }
 
   task plugin(type: Jar) {
-    archiveBaseName = "plugin-${pluginId}"
+    baseName = "plugin-${pluginId}"
     into('classes') {
       with jar
     }
     into('lib') {
       from configurations.compile
     }
-    archiveExtension ='zip'
+    extension('zip')
   }
 
   task assemblePlugin(type: Copy) {
