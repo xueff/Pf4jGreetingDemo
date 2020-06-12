@@ -15,18 +15,16 @@
  */
 package org.pf4j.demo;
 
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
-import org.pf4j.CompoundPluginDescriptorFinder;
-import org.pf4j.ManifestPluginDescriptorFinder;
-import org.pf4j.PropertiesPluginDescriptorFinder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pf4j.demo.api.IMutiVersionConnectionPlugs;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.PluginManager;
 import org.pf4j.PluginWrapper;
-import org.pf4j.demo.api.Greeting;
 
+import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A boot class that start the demo.
@@ -34,79 +32,112 @@ import java.util.List;
  * @author Decebal Suiu
  */
 public class Boot {
-    private static final Logger logger = LoggerFactory.getLogger(Boot.class);
-
     public static void main(String[] args) {
-        // print logo
-        printLogo();
+        try {
 
-        // create the plugin manager
-        final PluginManager pluginManager = new DefaultPluginManager() {
-          @Override
-          protected CompoundPluginDescriptorFinder createPluginDescriptorFinder() {
-            return new CompoundPluginDescriptorFinder()
-                // Demo is using the Manifest file
-                // PropertiesPluginDescriptorFinder is commented out just to avoid error log
-                //.add(new PropertiesPluginDescriptorFinder())
-                .add(new ManifestPluginDescriptorFinder());
-          }
-        };
+            // print logo
+            printLogo();
 
-        // load the plugins
-        pluginManager.loadPlugins();
+            // create the plugin manager
+            final PluginManager pluginManager = new DefaultPluginManager();
+            //        final PluginManager pluginManager = new JarPluginManager();
 
-        // enable a disabled plugin
-//        pluginManager.enablePlugin("welcome-plugin");
+            // load the plugins
+            pluginManager.loadPlugins();
 
-        // start (active/resolved) the plugins
-        pluginManager.startPlugins();
+            // enable a disabled plugin
+            //        pluginManager.enablePlugin("welcome-plugin");
 
-        logger.info("Plugindirectory: ");
-        logger.info("\t" + System.getProperty("pf4j.pluginsDir", "plugins") + "\n");
+            // start (active/resolved) the plugins
+            pluginManager.startPlugins();
 
-        // retrieves the extensions for Greeting extension point
-        List<Greeting> greetings = pluginManager.getExtensions(Greeting.class);
-        logger.info(String.format("Found %d extensions for extension point '%s'", greetings.size(), Greeting.class.getName()));
-        for (Greeting greeting : greetings) {
-            logger.info(">>> " + greeting.getGreeting());
-        }
+            // retrieves the extensions for Greeting extension point
+            List<IMutiVersionConnectionPlugs> greetings = pluginManager.getExtensions(IMutiVersionConnectionPlugs.class);
+            System.out.println(String.format("Found %d extensions for extension point '%s'", greetings.size(), IMutiVersionConnectionPlugs.class.getName()));
+            System.out.println("获取连接");
+            for (IMutiVersionConnectionPlugs greeting : greetings) {
+                try {
+                    System.out.println("----------获取连接"+greeting.getClass().getName());
+                    Connection conn = greeting.getConnection(new JSONObject());
+                    greeting.executeSql(new JSONObject(),conn);
+                    greeting.fetchRecord(10);
 
-        // // print extensions from classpath (non plugin)
-        // logger.info(String.format("Extensions added by classpath:"));
-        // Set<String> extensionClassNames = pluginManager.getExtensionClassNames(null);
-        // for (String extension : extensionClassNames) {
-        //     logger.info("   " + extension);
-        // }
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        System.out.println("捕获Runtime 异常：" + e.getMessage());
+                    } else {
+                        System.out.println("捕获未知异常：" + e.getMessage());
 
-        // print extensions for each started plugin
-        List<PluginWrapper> startedPlugins = pluginManager.getStartedPlugins();
-        for (PluginWrapper plugin : startedPlugins) {
-            String pluginId = plugin.getDescriptor().getPluginId();
-            logger.info(String.format("Extensions added by plugin '%s':", pluginId));
-            // extensionClassNames = pluginManager.getExtensionClassNames(pluginId);
-            // for (String extension : extensionClassNames) {
-            //     logger.info("   " + extension);
-            // }
-        }
-
-        // stop the plugins
-        pluginManager.stopPlugins();
-        /*
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-
-            @Override
-            public void run() {
-                pluginManager.stopPlugins();
+                    }
+                }
             }
 
-        });
-        */
+            // print extensions from classpath (non plugin)
+            System.out.println("Extensions added by classpath:");
+            Set<String> extensionClassNames = pluginManager.getExtensionClassNames(null);
+            for (String extension : extensionClassNames) {
+                System.out.println("   " + extension);
+            }
+
+            // print extensions ids for each started plugin
+            List<PluginWrapper> startedPlugins = pluginManager.getStartedPlugins();
+            for (PluginWrapper plugin : startedPlugins) {
+                String pluginId = plugin.getDescriptor().getPluginId();
+                System.out.println(String.format("Extensions added by plugin '%s':", pluginId));
+                extensionClassNames = pluginManager.getExtensionClassNames(pluginId);
+                for (String extension : extensionClassNames) {
+                    System.out.println("   " + extension);
+                }
+            }
+
+            // print the extensions instances for Greeting extension point for each started plugin
+            for (PluginWrapper plugin : startedPlugins) {
+                String pluginId = plugin.getDescriptor().getPluginId();
+                System.out.println(String.format("Extensions instances added by plugin '%s' for extension point '%s':", pluginId, IMutiVersionConnectionPlugs.class.getName()));
+                List<IMutiVersionConnectionPlugs> extensions = pluginManager.getExtensions(IMutiVersionConnectionPlugs.class, pluginId);
+                for (Object extension : extensions) {
+                    System.out.println("   " + extension);
+                }
+            }
+
+            // print extensions instances from classpath (non plugin)
+            System.out.println("Extensions instances added by classpath:");
+            List extensions = pluginManager.getExtensions((String) null);
+            for (Object extension : extensions) {
+                System.out.println("   " + extension);
+            }
+
+            // print extensions instances for each started plugin
+            for (PluginWrapper plugin : startedPlugins) {
+                String pluginId = plugin.getDescriptor().getPluginId();
+                System.out.println(String.format("Extensions instances added by plugin '%s':", pluginId));
+                extensions = pluginManager.getExtensions(pluginId);
+                for (Object extension : extensions) {
+                    System.out.println("   " + extension);
+                }
+            }
+
+            // stop the plugins
+            pluginManager.stopPlugins();
+            /*
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+
+                @Override
+                public void run() {
+                    pluginManager.stopPlugins();
+                }
+
+            });
+            */
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private static void printLogo() {
-        logger.info(StringUtils.repeat("#", 40));
-        logger.info(StringUtils.center("PF4J-DEMO", 40));
-        logger.info(StringUtils.repeat("#", 40));
+        System.out.println(StringUtils.repeat("#", 40));
+        System.out.println(StringUtils.center("PF4J-DEMO", 40));
+        System.out.println(StringUtils.repeat("#", 40));
     }
-
 }
