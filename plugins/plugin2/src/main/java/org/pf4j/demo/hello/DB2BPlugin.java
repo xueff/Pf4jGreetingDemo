@@ -49,6 +49,7 @@ public class DB2BPlugin extends Plugin {
 
     @Extension(ordinal=1)
     public static class DB2BConnection implements IMutiVersionConnectionPlugs {
+        Connection conn = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         PreparedStatement pre = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         ResultSet result = null;// 创建一个结果集对象
 
@@ -73,7 +74,6 @@ public class DB2BPlugin extends Plugin {
     //            props.setProperty("user", json.getString("username"));
     //            props.setProperty("password", json.getString("password"));
 
-            Connection conn = null;// 创建一个数据库连接
             PreparedStatement pre = null;// 创建预编译语句对象，一般都是用这个而不用Statement
             ResultSet result = null;// 创建一个结果集对象
             try {
@@ -107,6 +107,22 @@ public class DB2BPlugin extends Plugin {
                     if(!pre.isClosed()){
                         try {
                             pre.close();
+                            isClose = true;
+                        } catch (Exception e) {
+                            isClose = false;
+                            e.printStackTrace();
+                        }
+                    }
+                } catch (Exception e) {
+                    isClose = false;
+                    e.printStackTrace();
+                }
+            }
+            if(conn != null){
+                try {
+                    if(!conn.isClosed()){
+                        try {
+                            conn.close();
                             isClose = true;
                         } catch (Exception e) {
                             isClose = false;

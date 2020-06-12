@@ -53,6 +53,7 @@ public class DB2APlugin extends Plugin {
 
     @Extension
     public static class DB2AConnection implements IMutiVersionConnectionPlugs {
+        Connection conn = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         PreparedStatement pre = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         ResultSet result = null;// 创建一个结果集对象
 
@@ -75,7 +76,6 @@ public class DB2APlugin extends Plugin {
             String username = json.getString("username");
             String password = json.getString("password");
 
-            Connection conn = null;// 创建一个数据库连接
             try {
                 conn = DriverManager.getConnection(url,username, password);
             } catch (Exception e) {
@@ -106,6 +106,22 @@ public class DB2APlugin extends Plugin {
                     if(!pre.isClosed()){
                         try {
                             pre.close();
+                            isClose = true;
+                        } catch (Exception e) {
+                            isClose = false;
+                            e.printStackTrace();
+                        }
+                    }
+                } catch (Exception e) {
+                    isClose = false;
+                    e.printStackTrace();
+                }
+            }
+            if(conn != null){
+                try {
+                    if(!conn.isClosed()){
+                        try {
+                            conn.close();
                             isClose = true;
                         } catch (Exception e) {
                             isClose = false;
