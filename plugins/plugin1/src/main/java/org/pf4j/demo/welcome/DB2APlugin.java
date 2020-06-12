@@ -27,6 +27,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Decebal Suiu
@@ -56,8 +58,24 @@ public class DB2APlugin extends Plugin {
         Connection conn = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         PreparedStatement pre = null;// 创建预编译语句对象，一般都是用这个而不用Statement
         ResultSet result = null;// 创建一个结果集对象
+        final String DB_TYPE = "DB2";
+        final String DB_VERSION = "A";
 
-    	@Override
+        @Override
+        public String getDBType() {
+            return DB_TYPE;
+        }
+        @Override
+        public String getVersion() {
+            return DB_VERSION;
+        }
+
+        @Override
+        public List<String> getVersionSupport() {
+            return new ArrayList<>();
+        }
+
+        @Override
         public Connection getConnection(JSONObject jsonObject) {
             System.out.println("DB2AConnection");
 
